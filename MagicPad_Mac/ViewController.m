@@ -13,6 +13,11 @@
 #define WIDTH [NSScreen mainScreen].frame.size.width
 #define HEIGHT [NSScreen mainScreen].frame.size.height
 
+struct dataStruct{
+    CGPoint trans;
+    BOOL click;
+};
+
 @interface ViewController() <NSTableViewDataSource,NSTableViewDelegate,NSTextFieldDelegate,MCSessionDelegate,MCNearbyServiceBrowserDelegate,MCBrowserViewControllerDelegate,NSStreamDelegate>
 
 @property (nonatomic,strong)MCPeerID * peerID;
@@ -103,6 +108,10 @@
     }
 }
 
+- (void)browser:(MCNearbyServiceBrowser *)browser lostPeer:(MCPeerID *)peerID{
+    
+}
+
 - (void)browserViewControllerDidFinish:(MCBrowserViewController *)browserViewController{
     [self dismissViewController:self.browserViewController];
 //    [self dismissViewControllerAnimated:YES completion:nil];
@@ -122,45 +131,57 @@
         if (![_sessionArray containsObject:session]) {
             [_sessionArray addObject:session];
         }
+        [self.brower stopBrowsingForPeers];
+    }
+    else if (state == MCSessionStateNotConnected){
+        [self.brower startBrowsingForPeers];
     }
 }
 
-//- (void)session:(MCSession *)session didReceiveData:(NSData *)data fromPeer:(MCPeerID *)peerID{
-//    CGPoint trans;
-//    [data getBytes:&trans length:sizeof(trans)];
-//    NSPoint curPos=[NSEvent mouseLocation];
-//    curPos.x+=trans.x;
-//    curPos.y=NSHeight([NSScreen screens][0].frame)-curPos.y;
-//    curPos.y+=trans.y;
-//    CGDisplayMoveCursorToPoint(0, curPos);
-//}
+- (void)session:(MCSession *)session didReceiveData:(NSData *)data fromPeer:(MCPeerID *)peerID{
+    struct dataStruct dataS;
+    [data getBytes:&dataS length:sizeof(dataS)];
+    NSPoint curPos=[NSEvent mouseLocation];
+    curPos.x+=dataS.trans.x;
+    curPos.y=NSHeight([NSScreen screens][0].frame)-curPos.y;
+    curPos.y+=dataS.trans.y;
+    if (dataS.click) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            CGEventRef downEvent = CGEventCreateMouseEvent(nil, kCGEventLeftMouseDown, curPos, kCGMouseButtonLeft);
+            CGEventSetIntegerValueField(downEvent, kCGMouseEventClickState, 1);
+            CGEventPost(kCGHIDEventTap, downEvent);
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                CGEventRef upEvent = CGEventCreateMouseEvent(nil, kCGEventLeftMouseUp, curPos, kCGMouseButtonLeft);
+                CGEventSetIntegerValueField(upEvent, kCGMouseEventClickState, 1);
+                CGEventPost(kCGHIDEventTap, upEvent);
 
-
--(void)session:(MCSession *)session didReceiveStream:(NSInputStream *)stream withName:(NSString *)streamName fromPeer:(MCPeerID *)peerID{
-    NSLog(@"xxxx");
-    stream.delegate=self;
-    [stream scheduleInRunLoop:NSRunLoop.mainRunLoop forMode:NSDefaultRunLoopMode];
-    [stream open];
-}
-
--(void)stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode{
-    if (eventCode==NSStreamEventHasBytesAvailable) {
-        CGPoint trans;
-        [(NSInputStream *)aStream read:&trans maxLength:sizeof(trans)];
-        NSPoint curPos=[NSEvent mouseLocation];
-        curPos.x+=trans.x;
-        curPos.y=NSHeight([NSScreen screens][0].frame)-curPos.y;
-        curPos.y+=trans.y;
+            });
+        });
+    }
+    else{
         CGDisplayMoveCursorToPoint(0, curPos);
     }
 }
 
-- (void)session:(MCSession *)session didStartReceivingResourceWithName:(NSString *)resourceName fromPeer:(MCPeerID *)peerID withProgress:(NSProgress *)progress{
-    
-}
 
-- (void)session:(MCSession *)session didFinishReceivingResourceWithName:(NSString *)resourceName fromPeer:(MCPeerID *)peerID atURL:(NSURL *)localURL withError:(NSError *)error{
-    
-}
+//-(void)session:(MCSession *)session didReceiveStream:(NSInputStream *)stream withName:(NSString *)streamName fromPeer:(MCPeerID *)peerID{
+//    NSLog(@"xxxx");
+//    stream.delegate=self;
+//    [stream scheduleInRunLoop:NSRunLoop.mainRunLoop forMode:NSDefaultRunLoopMode];
+//    [stream open];
+//}
+
+//-(void)stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode{
+//    if (eventCode==NSStreamEventHasBytesAvailable) {
+//        CGPoint trans;
+//        [(NSInputStream *)aStream read:&trans maxLength:sizeof(trans)];
+//        NSPoint curPos=[NSEvent mouseLocation];
+//        curPos.x+=trans.x;
+//        curPos.y=NSHeight([NSScreen screens][0].frame)-curPos.y;
+//        curPos.y+=trans.y;
+//        CGDisplayMoveCursorToPoint(0, curPos);
+//    }
+//}
+
 @end
 
