@@ -150,7 +150,7 @@ struct dataStruct{
             CGEventRef downEvent = CGEventCreateMouseEvent(nil, kCGEventLeftMouseDown, curPos, kCGMouseButtonLeft);
             CGEventSetIntegerValueField(downEvent, kCGMouseEventClickState, 1);
             CGEventPost(kCGHIDEventTap, downEvent);
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 CGEventRef upEvent = CGEventCreateMouseEvent(nil, kCGEventLeftMouseUp, curPos, kCGMouseButtonLeft);
                 CGEventSetIntegerValueField(upEvent, kCGMouseEventClickState, 1);
                 CGEventPost(kCGHIDEventTap, upEvent);
